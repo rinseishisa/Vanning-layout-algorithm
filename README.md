@@ -1,151 +1,185 @@
 # Vanning Layout Algorithm
 
-40ft コンテナ向けのバンニングレイアウト生成用リポジトリです。  
-本リポジトリでは、まず `small / medium / large` の荷物データを CSV で生成し、その CSV を入力として配置アルゴリズムを実行します。
+40ft コンテナ向けのバンニングレイアウト設計実装です。  
+`items_input.json` を入力として読み込み、要件定義書に沿った `layout_result.json` を出力します。  
+出力結果は `vanning-eval` の評価器にそのまま渡せます。
 
 ## Overview
 
-このリポジトリは、以下の 2 段構成で動作します。
+このリポジトリは次の 2 つの役割を持ちます。
 
-1. `generate_items_csv.py`
-   - 大・中・小の荷物数を指定して入力 CSV を生成します。
-   - 各荷物には寸法、重量、目的地 ID を付与します。
+1. `generate_items.py`
+   - `small / medium / large` の件数から `items_input.json` を生成
+   - 要件定義書の JSON 形式に合わせて、`dataset_info` と `items` を出力
 2. `algorithm.py`
-   - 生成された CSV を読み込み、40ft コンテナへの配置を行います。
-   - 制約チェックと要件書形式の JSON 出力を行います。
+   - `items_input.json` を読み込み、40ft コンテナへの配置を決定
+   - 評価器互換の `layout_result.json` を出力
 
 ## Files
 
-- [generate_items_csv.py](./generate_items_csv.py)
-  - 荷物データ生成スクリプト
+- [generate_items.py](./generate_items.py)
+  - 要件定義書どおりの入力データ生成スクリプト
+- [generate_items_json.py](./generate_items_json.py)
+  - `generate_items.py` と同内容の JSON 生成スクリプト
 - [algorithm.py](./algorithm.py)
   - バンニング配置アルゴリズム本体
-- [generated_items.csv](./generated_items.csv)
-  - 生成された入力 CSV の例
-- [output_solution_spec.json](./output_solution_spec.json)
-  - アルゴリズム出力例
 - [algorithm.ipynb](./algorithm.ipynb)
-  - Notebook ベースの検証用ファイル
+  - Notebook 版
+- [README.md](./README.md)
+  - 実行方法と仕様の概要
 
 ## Container Specification
 
-要件定義書に合わせて、以下の 40ft コンテナ条件を使用しています。
+要件定義書に合わせて、40ft コンテナの次の定数を使用しています。
 
-- Length: `5900 mm`
-- Width: `2350 mm`
-- Height: `2390 mm`
+- Length: `12000 mm`
+- Width: `2300 mm`
+- Height: `2400 mm`
 - Max payload: `24000 kg`
 
 ## Supported Item Types
 
-荷物は以下の 3 種類を前提にしています。
+積荷は以下の 3 種類です。
 
-- `small`: `760 x 1130 x 550`
-- `medium`: `1490 x 2260 x 900`
-- `large`: `2550 x 2280 x 2355`
+- `small`: `760(W) x 1130(L) x 550(H)`
+- `medium`: `1490(W) x 2260(L) x 900(H)`
+- `large`: `2280(W) x 2550(L) x 2355(H)`
 
-回転は水平方向の 90 度回転のみ許可し、天地は固定です。
+回転は水平面での `90°` 回転のみ許可し、天地は固定です。
 
-## Input CSV Format
+## Input Format
 
-`algorithm.py` は、以下の列を持つ CSV を入力とします。
+入力は `items_input.json` です。
 
-- `item_id`
-- `size_type`
-- `width`
-- `length`
-- `height`
-- `weight`
-- `destination_id`
+```json
+{
+  "dataset_info": {
+    "dataset_name": "case_01",
+    "seed": 42,
+    "item_count": 100
+  },
+  "items": [
+    {
+      "item_id": "P001",
+      "size_type": "medium",
+      "dimensions": {"w": 1490, "l": 2260, "h": 900},
+      "weight": 1200.5,
+      "destination_id": "DEST_A"
+    }
+  ]
+}
+```
 
-`generate_items_csv.py` はこの形式の CSV をそのまま出力します。
+## Output Format
 
-## Output JSON Format
+出力は `layout_result.json` です。評価器が要求する形式に合わせています。
 
-出力は要件書に合わせて、以下の構造を持つ JSON です。
-
-- `project_info`
-- `containers`
-  - `container_id`
-  - `destination_id`
-  - `total_weight`
-  - `items`
-
-各 `items` 要素には以下を出力します。
-
-- `item_id`
-- `size_type`
-- `dimensions`
-- `position`
-- `weight`
-- `is_rotated`
+```json
+{
+  "project_info": {
+    "team_name": "Team_Alpha",
+    "execution_time_ms": 1250
+  },
+  "containers": [
+    {
+      "container_id": 1,
+      "destination_id": "DEST_A",
+      "total_weight": 18500,
+      "items": [
+        {
+          "item_id": "P001",
+          "size_type": "medium",
+          "dimensions": {"w": 1490, "l": 2260, "h": 900},
+          "position": {"x": 0, "y": 0, "z": 0},
+          "weight": 1200,
+          "is_rotated": true,
+          "destination_id": "DEST_A"
+        }
+      ]
+    }
+  ]
+}
+```
 
 ## Constraints Considered
 
-`algorithm.py` では、少なくとも以下を見ています。
+`algorithm.py` では次の制約を見ています。
 
-- 荷物同士の重複禁止
+- 積荷同士の重複禁止
 - コンテナ外へのはみ出し禁止
 - 接地制約
-- コンテナごとの重量上限
 - 同一コンテナ内での `destination_id` 統一
-- 長手方向 Y 軸の重心偏差制約
-- 充填率の算出
+- コンテナ総重量 `24000 kg` 以下
+- Y 軸重心偏差の制約
+- 容積利用率の確認
 
 ## Algorithm Outline
 
 配置アルゴリズムは、実行可能解を安定して返すことを優先したヒューリスティックです。
 
 - First Fit Decreasing ベース
-- 既存荷物の端点から候補座標を生成
-- 回転 `0 / 90` を両方試行
-- 既存コンテナに入るなら優先して配置
-- 入らなければ新規コンテナを開く
-- 候補評価では以下を優先
-  - Y 軸重心偏差
-  - デッドスペース
-  - 配置高さ
+- 目的地ごとに積荷を分割
+- 候補点を既存積荷の端点から生成
+- 回転 `0 / 90` を試行
+- Y 軸重心偏差とデッドスペースを使って候補を評価
+- 入らなければ新しいコンテナを追加
+
+## Weight Generation
+
+要件定義書に合わせて、生成される積荷重量は各サイズ共通で次の範囲です。
+
+- `1000 kg` から `15000 kg`
 
 ## How To Run
 
-### 1. Generate Input CSV
+### 1. 入力データ生成
 
-```powershell
-cd "c:\Users\taiga\Downloads\バンニングレイアウト"
-python generate_items_csv.py --small 8 --medium 12 --large 4 --destinations 2 --output generated_items.csv
+```bash
+cd "/c/Users/taiga/Downloads/バンニングレイアウト"
+python generate_items.py --small 8 --medium 12 --large 4 --destinations 2 --output items_input.json
 ```
 
-### 2. Run Packing Algorithm
+### 2. レイアウト設計
 
-```powershell
-cd "c:\Users\taiga\Downloads\バンニングレイアウト"
-python algorithm.py --input generated_items.csv --output output_solution_spec.json --team-name "Team_Alpha"
+```bash
+cd "/c/Users/taiga/Downloads/バンニングレイアウト"
+python algorithm.py --input items_input.json --output layout_result.json --team-name "Team_Alpha"
 ```
 
-## Example
+### 3. 評価器へ直接出力
 
-生成と配置をまとめて実行する例です。
-
-```powershell
-cd "c:\Users\taiga\Downloads\バンニングレイアウト"
-python generate_items_csv.py --small 8 --medium 12 --large 4 --destinations 2 --output generated_items.csv
-python algorithm.py --input generated_items.csv --output output_solution_spec.json --team-name "Team_Alpha"
+```bash
+cd "/c/Users/taiga/Downloads/バンニングレイアウト"
+python algorithm.py --input items_input.json --submission-name taiga --eval-root "/c/Users/taiga/Downloads/Vanning-layout-algorithm/vanning-eval/vanning_eval_rui" --team-name "Team_Alpha"
 ```
 
-## Current Characteristics
+### 4. Batch 評価
 
-現状の実装には以下の特徴があります。
+```bash
+cd "/c/Users/taiga/Downloads/Vanning-layout-algorithm/vanning-eval/vanning_eval_rui"
+python main.py --batch
+```
 
-- 目的地制約を満たすようにコンテナを分離
-- 中央寄せ候補を追加して重心悪化を抑制
-- 充填率や重心偏差を簡易評価
-- 厳密最適化ではなく、まず feasible な解を返す構成
+### 5. WebUI 起動
+
+```bash
+cd "/c/Users/taiga/Downloads/Vanning-layout-algorithm/vanning-eval/vanning_eval_rui"
+python main.py
+```
+
+## Current Status
+
+現状のコードは以下を満たしています。
+
+- `items_input.json` 生成に対応
+- `layout_result.json` 出力に対応
+- evaluator 互換のスキーマに対応
+- `taiga` 提出で batch 評価の合格実績あり
 
 ## Future Improvements
 
-- 同一目的地内での荷物順序最適化
-- コンテナ間 swap による重心改善
-- 低充填率コンテナの再配置
-- 候補点生成の高度化
-- 焼きなまし、ビームサーチ、GA などへの拡張
-
+- コンテナ本数削減のための再配置
+- 重心改善の局所探索
+- 充填率向上のための候補点再評価
+- 重量分布ルールの詳細化
+- ビームサーチや焼きなましへの拡張
