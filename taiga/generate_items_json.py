@@ -22,9 +22,9 @@ WEIGHT_RANGES = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate packing input json from small/medium/large counts")
-    parser.add_argument("--small", type=int, default=8)
-    parser.add_argument("--medium", type=int, default=12)
-    parser.add_argument("--large", type=int, default=4)
+    parser.add_argument("--small", type=int, default=30)
+    parser.add_argument("--medium", type=int, default=40)
+    parser.add_argument("--large", type=int, default=30)
     parser.add_argument("--destinations", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output", type=Path, default=Path("generated_items.json"))

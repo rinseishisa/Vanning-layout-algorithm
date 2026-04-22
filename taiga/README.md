@@ -5,10 +5,8 @@
 
 ## Files
 
-- [generate_items.py](./generate_items.py)
-  - `items_input.json` を生成する入口スクリプト
 - [generate_items_json.py](./generate_items_json.py)
-  - JSON 生成本体
+  - `items_input.json` を生成する JSON 生成スクリプト
 - [algorithm.py](./algorithm.py)
   - taiga 実装の配置アルゴリズム本体
 
@@ -36,21 +34,21 @@
 
 ```bash
 cd "/c/Users/taiga/Downloads/バンニングレイアウト"
-python taiga/generate_items.py --small 8 --medium 12 --large 4 --destinations 2 --output items_input.json
+python taiga/generate_items_json.py --small 8 --medium 12 --large 4 --destinations 2 --output taiga/items_input.json
 ```
 
 ### 2. レイアウト設計
 
 ```bash
 cd "/c/Users/taiga/Downloads/バンニングレイアウト"
-python taiga/algorithm.py --input items_input.json --output layout_result.json --team-name "Team_Alpha"
+python taiga/algorithm.py --input taiga/items_input.json --output taiga/layout_result.json --team-name "Team_Alpha"
 ```
 
 ### 3. 評価器へ直接出力
 
 ```bash
 cd "/c/Users/taiga/Downloads/バンニングレイアウト"
-python taiga/algorithm.py --input items_input.json --submission-name taiga --eval-root "/c/Users/taiga/Downloads/Vanning-layout-algorithm/vanning-eval/vanning_eval_rui" --team-name "Team_Alpha"
+python taiga/algorithm.py --input taiga/items_input.json --submission-name taiga --eval-root "/c/Users/taiga/Downloads/Vanning-layout-algorithm/vanning-eval/vanning_eval_rui" --team-name "Team_Alpha"
 ```
 
 ## Result Snapshot
