@@ -9,7 +9,7 @@ from pathlib import Path
 SIZE_SPECS = {
     "small": (760, 1130, 550),
     "medium": (1490, 2260, 900),
-    "large": (2550, 2280, 2355),
+    "large": (2280, 2550, 2355),
 }
 
 WEIGHT_RANGES = {
