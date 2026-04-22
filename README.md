@@ -8,23 +8,21 @@
 
 このリポジトリは次の 2 つの役割を持ちます。
 
-1. `generate_items.py`
+1. `taiga/generate_items.py`
    - `small / medium / large` の件数から `items_input.json` を生成
    - 要件定義書の JSON 形式に合わせて、`dataset_info` と `items` を出力
-2. `algorithm.py`
+2. `taiga/algorithm.py`
    - `items_input.json` を読み込み、40ft コンテナへの配置を決定
    - 評価器互換の `layout_result.json` を出力
 
 ## Files
 
-- [generate_items.py](./generate_items.py)
+- [taiga/generate_items.py](./taiga/generate_items.py)
   - 要件定義書どおりの入力データ生成スクリプト
-- [generate_items_json.py](./generate_items_json.py)
+- [taiga/generate_items_json.py](./taiga/generate_items_json.py)
   - `generate_items.py` と同内容の JSON 生成スクリプト
-- [algorithm.py](./algorithm.py)
+- [taiga/algorithm.py](./taiga/algorithm.py)
   - バンニング配置アルゴリズム本体
-- [algorithm.ipynb](./algorithm.ipynb)
-  - Notebook 版
 - [README.md](./README.md)
   - 実行方法と仕様の概要
 
@@ -103,7 +101,7 @@
 
 ## Constraints Considered
 
-`algorithm.py` では次の制約を見ています。
+`taiga/algorithm.py` では次の制約を見ています。
 
 - 積荷同士の重複禁止
 - コンテナ外へのはみ出し禁止
@@ -136,21 +134,21 @@
 
 ```bash
 cd "/c/Users/taiga/Downloads/バンニングレイアウト"
-python generate_items.py --small 8 --medium 12 --large 4 --destinations 2 --output items_input.json
+python taiga/generate_items.py --small 8 --medium 12 --large 4 --destinations 2 --output items_input.json
 ```
 
 ### 2. レイアウト設計
 
 ```bash
 cd "/c/Users/taiga/Downloads/バンニングレイアウト"
-python algorithm.py --input items_input.json --output layout_result.json --team-name "Team_Alpha"
+python taiga/algorithm.py --input items_input.json --output layout_result.json --team-name "Team_Alpha"
 ```
 
 ### 3. 評価器へ直接出力
 
 ```bash
 cd "/c/Users/taiga/Downloads/バンニングレイアウト"
-python algorithm.py --input items_input.json --submission-name taiga --eval-root "/c/Users/taiga/Downloads/Vanning-layout-algorithm/vanning-eval/vanning_eval_rui" --team-name "Team_Alpha"
+python taiga/algorithm.py --input items_input.json --submission-name taiga --eval-root "/c/Users/taiga/Downloads/Vanning-layout-algorithm/vanning-eval/vanning_eval_rui" --team-name "Team_Alpha"
 ```
 
 ### 4. Batch 評価
