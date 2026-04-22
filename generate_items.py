@@ -19,19 +19,19 @@ ITEM_TYPES = {
         "w": 760,
         "l": 1130,
         "h": 550,
-        "weight_range": (100, 400)
+        "weight_range": (1000, 15000)
     },
     "medium": {
         "w": 1490,
         "l": 2260,
         "h": 900,
-        "weight_range": (500, 1500)
+        "weight_range": (1000, 15000)
     },
     "large": {
         "w": 2280,
         "l": 2550,
         "h": 2355,
-        "weight_range": (1500, 4000)
+        "weight_range": (1000, 15000)
     }
 }
 
