@@ -7,12 +7,32 @@
 | フォルダ | 担当者 |
 |---|---|
 | `shisa/` | https://github.com/rinseishisa |
+| `taiga/` | https://github.com/hiramatsutaiga |
 
 各メンバーが独自のアルゴリズムを実装し、同一の積荷データに対する結果を比較します。メンバーの作成が終わり次第、随時更新する予定
 
+## コンテナ仕様
+
+要件定義書に合わせて、40ft コンテナの次の定数を使用しています。
+
+- Length: `12000 mm`
+- Width: `2300 mm`
+- Height: `2400 mm`
+- Max payload: `24000 kg`
+
+## 対応積荷タイプ
+
+積荷は以下の 3 種類です。
+
+- `small`: `760(W) x 1130(L) x 550(H)`
+- `medium`: `1490(W) x 2260(L) x 900(H)`
+- `large`: `2280(W) x 2550(L) x 2355(H)`
+
+回転は水平面での `90°` 回転のみ許可し、天地は固定です。
+
 ## 入力データ仕様
 
-ファイル名：`items_input.json`（リポジトリルートに配置）
+ファイル名：`items_input.json`（shisa/items_input.json）
 
 ```json
 {
@@ -46,44 +66,55 @@
 
 ## 出力形式
 
-ファイル名：`config.json`（各メンバーのフォルダ内に配置）
+ファイル名：`layout_result.json`
 
-アルゴリズムが使用するコンテナ仕様・制約・評価基準を定義します。
+アルゴリズムが計算したコンテナへの積荷配置結果を出力します。
 
 ```json
 {
-  "container": {
-    "type": "40ft",
-    "dimensions": { "l": 5900, "w": 2350, "h": 2390 },
-    "max_weight": 24000
+  "project_info": {
+    "team_name": "Team_Alpha",
+    "execution_time_ms": 2,
+    "input_file": "items_input.json"
   },
-  "rotation_rule": {
-    "z_axis_rotation_forbidden": true,
-    "xy_90deg_rotation_only": true
-  },
-  "constraints": {
-    "no_overlap": true,
-    "ground_contact_required": true,
-    "same_destination_only": true,
-    "min_fill_rate": 0.5
-  },
-  "evaluation": {
-    "disqualify_on": ["overlap", "out_of_bounds", "weight_over"],
-    "fill_rate_penalty_threshold": 0.5,
-    "efficiency": {
-      "fewer_containers_is_better": true,
-      "higher_average_fill_rate_is_better": true
+  "containers": [
+    {
+      "container_id": 1,
+      "destination_id": "DEST_A",
+      "total_weight": 7891.72,
+      "items": [
+        {
+          "item_id": "P001",
+          "size_type": "large",
+          "dimensions": { "w": 2280, "l": 2550, "h": 2355 },
+          "position": { "x": 0, "y": 0, "z": 0 },
+          "weight": 3883.75,
+          "is_rotated": false,
+          "destination_id": "DEST_A"
+        }
+      ]
     }
-  }
+  ]
 }
 ```
 
-| フィールド | 説明 |
-|---|---|
-| `container` | コンテナの種類・寸法（mm）・最大積載重量（kg） |
-| `rotation_rule` | 回転制約（Z軸回転禁止、XY平面90度回転のみ許可） |
-| `constraints` | 配置制約（重複禁止、接地必須、同一配送先のみ、最低充填率など） |
-| `evaluation` | 評価基準（失格条件・充填率ペナルティ・重心位置・効率指標） |
+| フィールド | 型 | 説明 |
+|---|---|---|
+| `project_info.team_name` | string | チーム名 |
+| `project_info.execution_time_ms` | int | アルゴリズムの実行時間（単位：ms） |
+| `project_info.input_file` | string | 使用した入力ファイル名 |
+| `containers` | array | 使用したコンテナの一覧 |
+| `container_id` | int | コンテナの通し番号 |
+| `destination_id` | string | このコンテナの配送先ID（例：DEST_A） |
+| `total_weight` | float | コンテナ内の積荷合計重量（単位：kg） |
+| `items` | array | このコンテナに積まれた積荷の一覧 |
+| `item_id` | string | 積荷の識別ID（例：P001） |
+| `size_type` | string | サイズ区分（`small` / `medium` / `large`） |
+| `dimensions` | object | 配置時の寸法（単位：mm）。`w`=幅, `l`=長さ, `h`=高さ |
+| `position` | object | コンテナ内の配置座標（単位：mm）。`x`=幅方向, `y`=奥行方向, `z`=高さ方向 |
+| `weight` | float | 積荷の重量（単位：kg） |
+| `is_rotated` | bool | XY平面での90度回転の有無 |
+| `item.destination_id` | string | 積荷の配送先ID |
 
 詳細な制約・評価ルールは[要件定義書](要件定義書v1.md)を参照。
 
