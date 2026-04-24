@@ -8,6 +8,7 @@
 |---|---|
 | `shisa/` | https://github.com/rinseishisa |
 | `taiga/` | https://github.com/hiramatsutaiga |
+| `algo/kojima` | https://github.com/iput2023-kojima |
 
 各メンバーが独自のアルゴリズムを実装し、同一の積荷データに対する結果を比較します。メンバーの作成が終わり次第、随時更新する予定
 
