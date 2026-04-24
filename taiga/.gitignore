@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+
+generated_items.csv
+generated_items.json
+items_input.json
+layout_result.json
+output_solution_spec.json
+(抜粋)ケースリスト.csv
+!items_input.json
