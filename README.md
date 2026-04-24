@@ -33,7 +33,7 @@
 
 ## 入力データ仕様
 
-ファイル名：`items_input.json`（shisa/items_input.json）
+ファイル名：`items_input.json`
 
 ```json
 {
