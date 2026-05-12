@@ -6,6 +6,37 @@
 
 与えられた積荷データをもとに、コンテナへの最適な配置を計算するアルゴリズムを複数人で開発・比較するリポジトリです。
 
+## クイックスタート
+
+### 1. リポジトリをクローン
+
+```bash
+git clone https://github.com/rinseishisa/Vanning-layout-algorithm.git
+cd Vanning-layout-algorithm
+```
+
+### 2. 担当ディレクトリに移動
+
+各メンバーがそれぞれのディレクトリでアルゴリズムを実装しています。例えば `shisa/` の場合：
+
+```bash
+cd shisa
+```
+
+### 3. 実行（shisa の例）
+
+```bash
+# 積荷データを生成（初回のみ実行すればOK）
+python generate_items.py
+
+# コンテナへの配置を計算
+python algorithm.py
+```
+
+実行後、`layout_result.json` が出力されます。
+
+> 他のメンバーのディレクトリの実行方法は、各ディレクトリ内の README を参照してください。
+
 ## フォルダ構成
 
 | フォルダ | 担当者 |
