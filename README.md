@@ -133,18 +133,10 @@ python algorithm.py
 | `is_rotated` | bool | XY平面での90度回転の有無 |
 | `item.destination_id` | string | 積荷の配送先ID |
 
+## 評価方法
+
+作成した `layout_result.json` の評価方法については、[2026_SolutionDeployment_Eval](https://github.com/ornamentsclimate/2026_SolutionDeployment_Eval) リポジトリを参照してください。
+
 ## 共通仕様
 
 詳細は[要件定義書](要件定義書.md)を参照してください。
-
-## 共通仕様
-
-詳細は[要件定義書](要件定義書.md)を参照してください。
-
-## 今後追記予定
-
-開発が進むごとに以下の内容を順次追記していきます。
-
-- 各アルゴリズムの説明
-- 実行方法・比較方法
-- 評価指標・スコアリング結果
