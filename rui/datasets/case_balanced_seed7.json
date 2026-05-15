@@ -4,9 +4,23 @@
     "seed": 7,
     "item_count": 100,
     "case": "case_balanced",
-    "density_range_kg_per_m3": [
-      300,
-      700
+    "density_by_size_kg_per_m3": {
+      "small": [
+        150,
+        450
+      ],
+      "medium": [
+        150,
+        450
+      ],
+      "large": [
+        150,
+        450
+      ]
+    },
+    "weight_bounds_kg": [
+      100,
+      12000
     ],
     "size_ratio": [
       0.5,
@@ -28,7 +42,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 170.2,
+      "weight": 100,
       "destination_id": "DEST_B"
     },
     {
@@ -39,7 +53,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 242.95,
+      "weight": 146.79,
       "destination_id": "DEST_B"
     },
     {
@@ -50,7 +64,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 237.57,
+      "weight": 142.76,
       "destination_id": "DEST_A"
     },
     {
@@ -61,7 +75,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 154.9,
+      "weight": 100,
       "destination_id": "DEST_A"
     },
     {
@@ -72,7 +86,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 297.92,
+      "weight": 188.02,
       "destination_id": "DEST_A"
     },
     {
@@ -83,7 +97,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 260.25,
+      "weight": 159.76,
       "destination_id": "DEST_C"
     },
     {
@@ -94,7 +108,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1390.08,
+      "weight": 815.26,
       "destination_id": "DEST_C"
     },
     {
@@ -105,7 +119,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 303.9,
+      "weight": 192.5,
       "destination_id": "DEST_A"
     },
     {
@@ -116,7 +130,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 163.96,
+      "weight": 100,
       "destination_id": "DEST_A"
     },
     {
@@ -127,7 +141,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1128.29,
+      "weight": 618.92,
       "destination_id": "DEST_B"
     },
     {
@@ -138,7 +152,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1360.64,
+      "weight": 793.18,
       "destination_id": "DEST_B"
     },
     {
@@ -149,7 +163,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 152.96,
+      "weight": 100,
       "destination_id": "DEST_A"
     },
     {
@@ -160,7 +174,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1427.55,
+      "weight": 843.37,
       "destination_id": "DEST_A"
     },
     {
@@ -171,7 +185,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1458.58,
+      "weight": 866.63,
       "destination_id": "DEST_A"
     },
     {
@@ -182,7 +196,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1756.56,
+      "weight": 1090.12,
       "destination_id": "DEST_A"
     },
     {
@@ -193,7 +207,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1545.87,
+      "weight": 932.11,
       "destination_id": "DEST_C"
     },
     {
@@ -204,7 +218,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1258.25,
+      "weight": 716.39,
       "destination_id": "DEST_C"
     },
     {
@@ -215,7 +229,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 220.7,
+      "weight": 130.1,
       "destination_id": "DEST_C"
     },
     {
@@ -226,7 +240,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 234.08,
+      "weight": 140.14,
       "destination_id": "DEST_A"
     },
     {
@@ -237,7 +251,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1836.06,
+      "weight": 1149.75,
       "destination_id": "DEST_B"
     },
     {
@@ -248,7 +262,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 5825.92,
+      "weight": 3342.54,
       "destination_id": "DEST_C"
     },
     {
@@ -259,7 +273,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1612.18,
+      "weight": 981.84,
       "destination_id": "DEST_B"
     },
     {
@@ -270,7 +284,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 2054.4,
+      "weight": 1313.5,
       "destination_id": "DEST_B"
     },
     {
@@ -281,7 +295,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 982.75,
+      "weight": 509.76,
       "destination_id": "DEST_C"
     },
     {
@@ -292,7 +306,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 2113.09,
+      "weight": 1357.52,
       "destination_id": "DEST_C"
     },
     {
@@ -303,7 +317,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 214.59,
+      "weight": 125.52,
       "destination_id": "DEST_C"
     },
     {
@@ -314,7 +328,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 228.93,
+      "weight": 136.27,
       "destination_id": "DEST_A"
     },
     {
@@ -325,7 +339,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 152.84,
+      "weight": 100,
       "destination_id": "DEST_C"
     },
     {
@@ -336,7 +350,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 188.49,
+      "weight": 105.94,
       "destination_id": "DEST_B"
     },
     {
@@ -347,7 +361,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 4548.92,
+      "weight": 2384.79,
       "destination_id": "DEST_B"
     },
     {
@@ -358,7 +372,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1980.09,
+      "weight": 1257.77,
       "destination_id": "DEST_C"
     },
     {
@@ -369,7 +383,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 5632.44,
+      "weight": 3197.44,
       "destination_id": "DEST_B"
     },
     {
@@ -380,7 +394,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 308.76,
+      "weight": 196.14,
       "destination_id": "DEST_C"
     },
     {
@@ -391,7 +405,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 175.0,
+      "weight": 100,
       "destination_id": "DEST_A"
     },
     {
@@ -402,7 +416,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 233.33,
+      "weight": 139.57,
       "destination_id": "DEST_B"
     },
     {
@@ -413,7 +427,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 142.48,
+      "weight": 100,
       "destination_id": "DEST_B"
     },
     {
@@ -424,7 +438,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 248.7,
+      "weight": 151.1,
       "destination_id": "DEST_C"
     },
     {
@@ -435,7 +449,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1534.11,
+      "weight": 923.28,
       "destination_id": "DEST_B"
     },
     {
@@ -446,7 +460,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 974.65,
+      "weight": 503.69,
       "destination_id": "DEST_C"
     },
     {
@@ -457,7 +471,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1969.34,
+      "weight": 1249.7,
       "destination_id": "DEST_C"
     },
     {
@@ -468,7 +482,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 217.08,
+      "weight": 127.39,
       "destination_id": "DEST_A"
     },
     {
@@ -479,7 +493,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 984.66,
+      "weight": 511.19,
       "destination_id": "DEST_A"
     },
     {
@@ -490,7 +504,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 172.37,
+      "weight": 100,
       "destination_id": "DEST_B"
     },
     {
@@ -501,7 +515,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 141.75,
+      "weight": 100,
       "destination_id": "DEST_A"
     },
     {
@@ -512,7 +526,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 210.4,
+      "weight": 122.38,
       "destination_id": "DEST_A"
     },
     {
@@ -523,7 +537,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 7470.72,
+      "weight": 4576.14,
       "destination_id": "DEST_A"
     },
     {
@@ -534,7 +548,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 207.34,
+      "weight": 120.08,
       "destination_id": "DEST_B"
     },
     {
@@ -545,7 +559,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 302.1,
+      "weight": 191.15,
       "destination_id": "DEST_C"
     },
     {
@@ -556,7 +570,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 233.12,
+      "weight": 139.41,
       "destination_id": "DEST_A"
     },
     {
@@ -567,7 +581,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 206.44,
+      "weight": 119.4,
       "destination_id": "DEST_A"
     },
     {
@@ -578,7 +592,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1104.9,
+      "weight": 601.38,
       "destination_id": "DEST_A"
     },
     {
@@ -589,7 +603,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 7000.74,
+      "weight": 4223.66,
       "destination_id": "DEST_A"
     },
     {
@@ -600,7 +614,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 941.98,
+      "weight": 479.19,
       "destination_id": "DEST_B"
     },
     {
@@ -611,7 +625,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 8835.84,
+      "weight": 5599.98,
       "destination_id": "DEST_C"
     },
     {
@@ -622,7 +636,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 210.98,
+      "weight": 122.81,
       "destination_id": "DEST_A"
     },
     {
@@ -633,7 +647,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1554.84,
+      "weight": 938.83,
       "destination_id": "DEST_C"
     },
     {
@@ -644,7 +658,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 183.84,
+      "weight": 102.46,
       "destination_id": "DEST_C"
     },
     {
@@ -655,7 +669,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 8777.26,
+      "weight": 5556.05,
       "destination_id": "DEST_C"
     },
     {
@@ -666,7 +680,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1806.12,
+      "weight": 1127.29,
       "destination_id": "DEST_A"
     },
     {
@@ -677,7 +691,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1340.23,
+      "weight": 777.88,
       "destination_id": "DEST_A"
     },
     {
@@ -688,7 +702,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 194.49,
+      "weight": 110.45,
       "destination_id": "DEST_A"
     },
     {
@@ -699,7 +713,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 2068.75,
+      "weight": 1324.26,
       "destination_id": "DEST_B"
     },
     {
@@ -710,7 +724,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 9518.87,
+      "weight": 6112.25,
       "destination_id": "DEST_C"
     },
     {
@@ -721,7 +735,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 183.36,
+      "weight": 102.09,
       "destination_id": "DEST_A"
     },
     {
@@ -732,7 +746,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 180.32,
+      "weight": 100,
       "destination_id": "DEST_B"
     },
     {
@@ -743,7 +757,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 8710.48,
+      "weight": 5505.96,
       "destination_id": "DEST_B"
     },
     {
@@ -754,7 +768,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1878.58,
+      "weight": 1181.63,
       "destination_id": "DEST_A"
     },
     {
@@ -765,7 +779,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 2012.09,
+      "weight": 1281.77,
       "destination_id": "DEST_C"
     },
     {
@@ -776,7 +790,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1488.7,
+      "weight": 889.23,
       "destination_id": "DEST_A"
     },
     {
@@ -787,7 +801,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1312.3,
+      "weight": 756.92,
       "destination_id": "DEST_C"
     },
     {
@@ -798,7 +812,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 6275.51,
+      "weight": 3679.74,
       "destination_id": "DEST_B"
     },
     {
@@ -809,7 +823,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 8077.16,
+      "weight": 5030.97,
       "destination_id": "DEST_A"
     },
     {
@@ -820,7 +834,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 170.26,
+      "weight": 100,
       "destination_id": "DEST_C"
     },
     {
@@ -831,7 +845,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1086.4,
+      "weight": 587.5,
       "destination_id": "DEST_C"
     },
     {
@@ -842,7 +856,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 7707.31,
+      "weight": 4753.58,
       "destination_id": "DEST_B"
     },
     {
@@ -853,7 +867,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1067.99,
+      "weight": 573.69,
       "destination_id": "DEST_A"
     },
     {
@@ -864,7 +878,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 7665.72,
+      "weight": 4722.39,
       "destination_id": "DEST_B"
     },
     {
@@ -875,7 +889,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 6483.47,
+      "weight": 3835.71,
       "destination_id": "DEST_C"
     },
     {
@@ -886,7 +900,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1165.04,
+      "weight": 646.48,
       "destination_id": "DEST_A"
     },
     {
@@ -897,7 +911,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 187.15,
+      "weight": 104.94,
       "destination_id": "DEST_B"
     },
     {
@@ -908,7 +922,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 220.87,
+      "weight": 130.23,
       "destination_id": "DEST_A"
     },
     {
@@ -919,7 +933,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 6045.19,
+      "weight": 3507.0,
       "destination_id": "DEST_B"
     },
     {
@@ -930,7 +944,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 2005.44,
+      "weight": 1276.78,
       "destination_id": "DEST_B"
     },
     {
@@ -941,7 +955,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 6855.02,
+      "weight": 4114.36,
       "destination_id": "DEST_B"
     },
     {
@@ -952,7 +966,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 931.87,
+      "weight": 471.61,
       "destination_id": "DEST_B"
     },
     {
@@ -963,7 +977,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 142.44,
+      "weight": 100,
       "destination_id": "DEST_C"
     },
     {
@@ -974,7 +988,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 231.16,
+      "weight": 137.95,
       "destination_id": "DEST_C"
     },
     {
@@ -985,7 +999,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1304.37,
+      "weight": 750.98,
       "destination_id": "DEST_B"
     },
     {
@@ -996,7 +1010,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1859.94,
+      "weight": 1167.66,
       "destination_id": "DEST_A"
     },
     {
@@ -1007,7 +1021,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1210.44,
+      "weight": 680.53,
       "destination_id": "DEST_A"
     },
     {
@@ -1018,7 +1032,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1524.68,
+      "weight": 916.21,
       "destination_id": "DEST_B"
     },
     {
@@ -1029,7 +1043,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 2015.37,
+      "weight": 1284.23,
       "destination_id": "DEST_B"
     },
     {
@@ -1040,7 +1054,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1522.06,
+      "weight": 914.25,
       "destination_id": "DEST_B"
     },
     {
@@ -1051,7 +1065,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1457.56,
+      "weight": 865.87,
       "destination_id": "DEST_B"
     },
     {
@@ -1062,7 +1076,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 319.59,
+      "weight": 204.26,
       "destination_id": "DEST_C"
     },
     {
@@ -1073,7 +1087,7 @@
         "l": 2550,
         "h": 2355
       },
-      "weight": 9267.71,
+      "weight": 5923.89,
       "destination_id": "DEST_A"
     },
     {
@@ -1084,7 +1098,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 2052.69,
+      "weight": 1312.22,
       "destination_id": "DEST_C"
     },
     {
@@ -1095,7 +1109,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 164.68,
+      "weight": 100,
       "destination_id": "DEST_B"
     },
     {
@@ -1106,7 +1120,7 @@
         "l": 1130,
         "h": 550
       },
-      "weight": 187.17,
+      "weight": 104.95,
       "destination_id": "DEST_A"
     },
     {
@@ -1117,7 +1131,7 @@
         "l": 2260,
         "h": 900
       },
-      "weight": 1859.54,
+      "weight": 1167.35,
       "destination_id": "DEST_C"
     }
   ]

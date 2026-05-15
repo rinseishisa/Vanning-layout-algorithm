@@ -17,9 +17,12 @@ CONTAINER_LENGTH_MM = 12000
 CONTAINER_WIDTH_MM = 2300
 CONTAINER_HEIGHT_MM = 2400
 MAX_CONTAINER_WEIGHT_KG = 24000.0
+# 要件定義書 §5.1 の失格条件に充填率下限は含まれない。これは情報表示用の参考閾値のみ。
 MIN_FILL_RATE = 0.50
 Y_CENTER_MM = CONTAINER_LENGTH_MM / 2.0
-# Match the updated Y-axis scoring guide for a 12000 mm container.
+# Y_DEVIATION_LIMIT_MM は要件定義書 §5.2 のハード制約 (超過＝失格)。
+# Y_DEVIATION_FULL_SCORE_MM は採点ルールではなく、配置を中央寄りに誘導する
+# greedy ヒューリスティクスのソフト閾値 (ハード壁 3000 に余裕を残す目的)。
 Y_DEVIATION_FULL_SCORE_MM = 1200.0
 Y_DEVIATION_LIMIT_MM = 3000.0
 ROTATIONS = [0, 90]
@@ -419,6 +422,10 @@ def evaluate_solution(containers: Sequence[Container]) -> Dict[str, object]:
         "container_count": len(containers),
         "average_fill_rate": round(sum(container.fill_rate for container in containers) / max(len(containers), 1), 6),
         "max_y_deviation": round(max((y_deviation(container.items) for container in containers), default=0.0), 3),
+        # 要件定義書 §5.3 第1タイブレーク: 全コンテナの重心ズレ |Yg-Yc| の平均値。
+        "mean_y_deviation": round(
+            sum(y_deviation(container.items) for container in containers) / max(len(containers), 1), 3
+        ),
         "container_summaries": summaries,
     }
 
@@ -553,22 +560,20 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def calculate_fitness(evaluation: Dict[str, object]) -> float:
-    # 評価関数: スコアを計算 (高いほど良い)
+def fitness_key(evaluation: Dict[str, object]) -> Tuple[int, int, float]:
+    # 辞書式採点 (要件定義書 §5.3)。**小さいほど良い** タプルを返す。
+    #   1. 失格フラグ: 合格(0) < 失格(1) — 失格は常に最劣
+    #   2. コンテナ数 (主指標, 昇順)
+    #   3. 重心ズレ平均 mean(|Yg-Yc|) (第1タイブレーク, 昇順)
+    # 第2タイブレークの処理時間は個体評価時に未確定のため GA fitness では扱わない
+    # (旧・重み付き総合スコア式は採点方式変更で廃止)。
     if evaluation["disqualified"]:
-        return -9999999.0
-    
-    fill_rate = float(evaluation["average_fill_rate"])
-    container_count = int(evaluation["container_count"])
-    max_y_dev = float(evaluation["max_y_deviation"])
-    
-    # 充填率は大きいほど良い (0~1) -> 1万倍
-    # コンテナ数は少ないほど良い -> ペナルティ
-    # y_deviation は 1200 以内ならペナルティなし、超えたらマイナス
-    dev_penalty = max(0.0, max_y_dev - Y_DEVIATION_FULL_SCORE_MM)
-    
-    score = (fill_rate * 10000) - (container_count * 50000) - dev_penalty
-    return score
+        return (1, 0, 0.0)
+    return (
+        0,
+        int(evaluation["container_count"]),
+        float(evaluation["mean_y_deviation"]),
+    )
 
 def order_crossover(parent1: List[Item], parent2: List[Item]) -> List[Item]:
     # OX (Order Crossover)
@@ -607,44 +612,52 @@ def run_ga(base_items: List[Item], generations: int = 10, pop_size: int = 10) ->
         
     best_containers = None
     best_eval = None
-    best_score = -float('inf')
-    
+    best_key = None  # 辞書式キー: 小さいほど良い
+
     print(f"--- GA Started: pop_size={pop_size}, generations={generations} ---")
-    
+
     for gen in range(generations):
         scored_pop = []
         for seq in population:
             containers = pack_items(seq)
             evaluation = evaluate_solution(containers)
-            score = calculate_fitness(evaluation)
-            scored_pop.append((score, seq, containers, evaluation))
-            
-            if score > best_score:
-                best_score = score
+            key = fitness_key(evaluation)
+            scored_pop.append((key, seq, containers, evaluation))
+
+            if best_key is None or key < best_key:
+                best_key = key
                 best_containers = containers
                 best_eval = evaluation
-                
-        # 選択 (エリート主義 + トーナメント)
-        scored_pop.sort(key=lambda x: x[0], reverse=True)
+
+        # 選択 (エリート主義 + トーナメント) — 辞書式キー昇順 (小さいほど良い)
+        scored_pop.sort(key=lambda entry: entry[0])
         best_current = scored_pop[0]
-        print(f"Gen {gen+1}/{generations} - Best Score: {best_current[0]:.2f} (Containers: {best_current[3]['container_count']}, Fill: {best_current[3]['average_fill_rate']:.4f}, Dev: {best_current[3]['max_y_deviation']:.1f})")
-        
+        bc = best_current[3]
+        status = "OK" if not bc["disqualified"] else "DQ"
+        print(
+            f"Gen {gen+1}/{generations} - {status} "
+            f"Containers: {bc['container_count']}, "
+            f"MeanDev: {bc['mean_y_deviation']:.1f}, "
+            f"MaxDev: {bc['max_y_deviation']:.1f}, "
+            f"Fill: {bc['average_fill_rate']:.4f}"
+        )
+
         next_gen = [best_current[1]] # エリートを1つ残す
-        
+
         # 交叉と突然変異で次世代を作る
         while len(next_gen) < pop_size:
-            # トーナメント選択
+            # トーナメント選択 (キー最小 = 最良)
             tournament1 = random.sample(scored_pop, min(3, len(scored_pop)))
-            p1 = max(tournament1, key=lambda x: x[0])[1]
+            p1 = min(tournament1, key=lambda entry: entry[0])[1]
             tournament2 = random.sample(scored_pop, min(3, len(scored_pop)))
-            p2 = max(tournament2, key=lambda x: x[0])[1]
-            
+            p2 = min(tournament2, key=lambda entry: entry[0])[1]
+
             child = order_crossover(p1, p2)
             child = mutate(child, mutation_rate=0.2)
             next_gen.append(child)
-            
+
         population = next_gen
-        
+
     return best_containers, best_eval
 
 def main() -> None:
@@ -670,8 +683,9 @@ def main() -> None:
     print(f"input_file={args.input.resolve()}")
     print(f"output_file={output_path.resolve()}")
     print(f"container_count={evaluation['container_count']}")
-    print(f"average_fill_rate={evaluation['average_fill_rate']}")
+    print(f"mean_y_deviation={evaluation['mean_y_deviation']}")
     print(f"max_y_deviation={evaluation['max_y_deviation']}")
+    print(f"average_fill_rate={evaluation['average_fill_rate']}")
     print(f"low_fill_container_ids={evaluation['low_fill_container_ids']}")
     print(f"violations={evaluation['violations']}")
 
