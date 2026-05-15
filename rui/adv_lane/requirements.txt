@@ -1,0 +1,10 @@
+# Dependencies for rui/adv_lane adversarial instance generation
+
+# CMA-ES optimizer (Hansen 2016).  Used as the main outer-loop maximiser of
+# regret.  Fallback to a bare-bones (mu,lambda)-ES is provided when cma is
+# unavailable, but the covariance-matrix adaptation gives far better sample
+# efficiency on the 13-D generator parameter space.
+cma
+
+# Runtime dependencies already present in the repo:
+#   numpy, pandas  (used by algorithm_a and the evaluator)
