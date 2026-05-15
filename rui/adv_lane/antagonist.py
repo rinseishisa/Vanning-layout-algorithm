@@ -24,6 +24,17 @@ from rui.generate_items import DESTINATIONS
 
 ROTATIONS = [0, 90]
 
+# 複数順序シード（design.md §4「branch 多様化」）。
+# GA は item 順列を探索できるのが強み。ビームは投入順を固定すると
+# GA が引き当てる「その instance に効く順番」に負ける。代表的な
+# decreasing 順を複数試して best を採ることで順列優位を打ち消す。
+_ITEM_ORDERINGS = [
+    ("weight_desc", lambda it: (-it.weight, -it.volume, it.item_id)),
+    ("volume_desc", lambda it: (-it.volume, -it.weight, it.item_id)),
+    ("footprint_desc", lambda it: (-(it.width * it.length), -it.height, it.item_id)),
+    ("longedge_desc", lambda it: (-max(it.width, it.length, it.height), -it.volume, it.item_id)),
+]
+
 
 def _partial_lex_key(state: List[Container]) -> Tuple[int, float, int]:
     """Beam-pruning key: smaller is better."""
@@ -168,14 +179,31 @@ def beam_search_strong(
         group_items = groups.get(dest, [])
         if not group_items:
             continue
-        # Sort heaviest/largest first (same heuristic as algorithm_a)
-        group_items = sorted(group_items, key=lambda it: (-it.weight, -it.volume, it.item_id))
-        result = _beam_search_for_group(group_items, beam_width, branch)
-        if result is None:
+        # 複数順序シード: 各 decreasing 順でビームを走らせ、最良
+        # （辞書式: コンテナ数 → 重心ズレ平均）を採用する。
+        best_result: Optional[List[Container]] = None
+        best_key: Optional[Tuple[int, float]] = None
+        for _name, key_fn in _ITEM_ORDERINGS:
+            ordered = sorted(group_items, key=key_fn)
+            result = _beam_search_for_group(ordered, beam_width, branch)
+            if result is None:
+                continue
+            k = _final_lex_key(result)
+            if best_key is None or k < best_key:
+                best_key = k
+                best_result = result
+        if best_result is None:
+            # どの順序でも feasible にできない → antagonist 失格
             return [], True
-        # Renumber container IDs globally so they are unique across dest groups
-        for c in result:
-            c.container_id = len(all_containers) + 1
-        all_containers.extend(result)
+        all_containers.extend(best_result)
+
+    # コンテナ id を全 dest 横断で一意連番(1..N)へ再採番。
+    # 旧実装 `c.container_id = len(all_containers)+1` は extend 前なので
+    # len() が内ループ中不変＝グループ内全コンテナに同一 id を振るバグ。
+    # 評価は len(containers) で数えるため dN/regret は不変だったが、
+    # 出力 layout_result の container_id が重複し vanning-eval の
+    # コンテナ表示/集計が崩れる（例: 1,1,3,3,3,6,6,6,6）。
+    for i, c in enumerate(all_containers, start=1):
+        c.container_id = i
 
     return all_containers, False
