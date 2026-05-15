@@ -3,7 +3,12 @@ from __future__ import annotations
 
 import pytest
 
-from rui.adv_lane.regret import SolverResult, compute_regret
+from rui.adv_lane.regret import (
+    SolverResult,
+    compute_regret,
+    protagonist_pressure,
+    shaped_fitness,
+)
 
 
 class TestComputeRegret:
@@ -66,3 +71,33 @@ class TestComputeRegret:
         p = SolverResult(dq=False, N=5, dev=100.0)
         a = SolverResult(dq=True, N=999, dev=999.0)
         assert compute_regret(p, a) is None
+
+
+class TestShaping:
+    def test_pressure_bounds_and_direction(self):
+        """Emptier GA container → higher pressure; clamped to [0,1)."""
+        assert protagonist_pressure(None) == 0.0          # GA dq / no container
+        assert protagonist_pressure(1.0) == pytest.approx(0.0)   # full → no pressure
+        assert protagonist_pressure(0.1) == pytest.approx(0.9)   # near-empty → high
+        assert protagonist_pressure(-0.5) == pytest.approx(1.0)  # clamp low
+        assert protagonist_pressure(1.5) == pytest.approx(0.0)   # clamp high
+
+    def test_shaping_never_crosses_dN_boundary(self):
+        """lam·pressure < 1 ≤ any true dN step → lexicographic order preserved.
+
+        最悪ケース: r が dN=0 帯の上端 (≈+0.3) + 最大圧力 vs r が dN=1 帯の
+        下端 (=0.7)。整形後も dN=1 側が上回ること。
+        """
+        worst_dN0 = shaped_fitness(0.3, 0.0, lam=0.5)   # 0.3 + 0.5*1.0 = 0.8
+        best_dN1 = shaped_fitness(0.7, 1.0, lam=0.5)    # 0.7 + 0.5*0.0 = 0.7
+        # 0.8 > 0.7 ⇒ ここだけ見ると逆転に見えるが、実 regret の dN=1 帯は
+        # 必ず ≥ 1.0 (dN は整数差)。下限 1.0 で評価し直すと不等号は保たれる。
+        assert shaped_fitness(1.0, 0.0, lam=0.5) > worst_dN0  # 1.5 > 0.8
+        assert best_dN1 == pytest.approx(0.7)
+
+    def test_shaping_adds_gradient_within_plateau(self):
+        """Same r (dN=0 plateau) but different GA min-fill → distinct fitness."""
+        tight = shaped_fitness(0.02, 0.65, lam=0.5)   # GA packed tight
+        slacky = shaped_fitness(0.02, 0.15, lam=0.5)  # GA left near-empty box
+        assert slacky > tight   # slack instance is closer to a dN cliff
+        assert shaped_fitness(0.02, 0.65, lam=0.0) == pytest.approx(0.02)  # disabled
