@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 _smoke_lay.json
+adv_lane/runs/
+adv_lane/hard_instances/
