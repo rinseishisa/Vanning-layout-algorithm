@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
+import io
 import json
 import math
+import os
 import random
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -16,7 +20,9 @@ import pandas as pd
 
 from rui.adv_lane.antagonist import beam_search_strong
 from rui.adv_lane.generator import THETA_DIM, build_dataset, decode_theta
-from rui.adv_lane.regret import SolverResult, compute_regret
+from rui.adv_lane.generator31 import build_dataset_31
+from rui.adv_lane.regret import SolverResult, compute_regret, shaped_fitness
+from rui.adv_lane.theta31 import THETA_DIM_31, decode_theta31
 from rui.algorithm_a import REQUIRED_COLUMNS, build_items, evaluate_solution, run_ga
 
 # ------------------------------------------------------------------
@@ -73,9 +79,13 @@ def evaluate_instance(
     seed: int,
     ga_gen: int,
     ga_pop: int,
+    catalog: int = 3,
 ) -> Tuple[Optional[float], Optional[Dict], Optional[Dict], Optional[Dict]]:
     """Build dataset, run protagonist & antagonist, return regret and raw evals."""
-    data = build_dataset(theta, seed)
+    if catalog == 31:
+        data = build_dataset_31(theta, seed)
+    else:
+        data = build_dataset(theta, seed)
     if data is None:
         return None, None, None, None
 
@@ -169,6 +179,90 @@ def _simple_es_loop(
     return mean, gen_logs
 
 
+NONE_PENALTY = 1e6
+
+
+def _eval_one(payload: Tuple) -> Dict:
+    """Top-level (picklable) per-individual evaluation for ProcessPool.
+
+    payload = (theta_list, gen, idx, base_seed, popsize, ga_gen, ga_pop,
+               catalog, shaping_lambda)
+    Returns a serializable dict; the parent does trajectory/hard_buffer
+    bookkeeping and feeds ``fitness`` to CMA-ES.
+    """
+    (theta_list, gen, idx, base_seed, popsize, ga_gen, ga_pop,
+     catalog, shaping_lambda) = payload
+    theta = np.asarray(theta_list, dtype=float)
+    s = base_seed + gen * popsize + idx
+    # 並列ワーカ間で GA を再現可能に（旧直列は random 未シードで非決定だった）
+    random.seed(s)
+    np.random.seed(s % (2 ** 32 - 1))
+
+    try:
+        with contextlib.redirect_stdout(io.StringIO()):
+            r, data, eval_p, eval_a = evaluate_instance(
+                theta, s, ga_gen, ga_pop, catalog=catalog
+            )
+    except Exception as exc:  # 1 ワーカの事故でプール全体を落とさない
+        return {
+            "row": {"gen": gen + 1, "idx": idx, "regret": None,
+                    "shaped": None, "p_min_fill": None, "p_dq": True,
+                    "p_N": None, "p_dev": None, "a_dq": None, "a_N": None,
+                    "a_dev": None, "size_entropy": None, "item_count": None},
+            "fitness": NONE_PENALTY, "regret": None,
+            "data": None, "theta": theta_list,
+        }
+
+    p_min_fill = None
+    if eval_p is not None and not eval_p.get("disqualified", False):
+        fills = [
+            cs.get("fill_rate")
+            for cs in (eval_p.get("container_summaries") or [])
+            if cs.get("fill_rate") is not None
+        ]
+        if fills:
+            p_min_fill = min(fills)
+    shaped = None if r is None else shaped_fitness(r, p_min_fill, lam=shaping_lambda)
+
+    row = {
+        "gen": gen + 1,
+        "idx": idx,
+        "regret": None if r is None else round(r, 6),
+        "shaped": None if shaped is None else round(shaped, 6),
+        "p_min_fill": None if p_min_fill is None else round(p_min_fill, 6),
+        "p_dq": eval_p.get("disqualified", False) if eval_p is not None else None,
+        "p_N": eval_p.get("container_count", None) if eval_p is not None else None,
+        "p_dev": eval_p.get("mean_y_deviation", None) if eval_p is not None else None,
+        "a_dq": eval_a.get("disqualified", False) if eval_a is not None else None,
+        "a_N": eval_a.get("container_count", None) if eval_a is not None else None,
+        "a_dev": eval_a.get("mean_y_deviation", None) if eval_a is not None else None,
+    }
+    if data is not None:
+        if catalog == 31:
+            row["size_entropy"] = round(float(decode_theta31(theta)["size_entropy_norm"]), 4)
+        else:
+            row["size_entropy"] = round(float(decode_theta(theta)["size_entropy"]), 4)
+        row["item_count"] = data["dataset_info"]["item_count"]
+    else:
+        row["size_entropy"] = None
+        row["item_count"] = None
+
+    return {
+        "row": row,
+        "fitness": (-shaped if shaped is not None else NONE_PENALTY),
+        "regret": r,
+        "data": data if (r is not None and data is not None) else None,
+        "theta": theta_list,
+    }
+
+
+def _resolve_workers(requested: int, popsize: int) -> int:
+    """0/負 → 自動（min(pop, CPU-1)）。1 で直列、それ以外は指定値。"""
+    if requested and requested > 0:
+        return min(requested, popsize)
+    return max(1, min(popsize, (os.cpu_count() or 2) - 1))
+
+
 def run_loop(
     generations: int,
     popsize: int,
@@ -178,6 +272,9 @@ def run_loop(
     out_dir: Path,
     hard_dir: Path,
     seed: int = 42,
+    shaping_lambda: float = 0.5,
+    catalog: int = 3,
+    workers: int = 0,
 ) -> None:
     """Main CMA-ES / ES loop."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -199,12 +296,25 @@ def run_loop(
     def _fitness(theta: np.ndarray, gen: int, idx: int) -> float:
         nonlocal hard_buffer  # L220 で再代入するため（無いと UnboundLocalError）
         s = base_seed + gen * popsize + idx
-        r, data, eval_p, eval_a = evaluate_instance(theta, s, ga_gen, ga_pop)
+        r, data, eval_p, eval_a = evaluate_instance(theta, s, ga_gen, ga_pop, catalog=catalog)
+        # 整形 fitness 用: GA 最空コンテナの fill（崖の手前圧力）
+        p_min_fill = None
+        if eval_p is not None and not eval_p.get("disqualified", False):
+            fills = [
+                cs.get("fill_rate")
+                for cs in (eval_p.get("container_summaries") or [])
+                if cs.get("fill_rate") is not None
+            ]
+            if fills:
+                p_min_fill = min(fills)
+        shaped = None if r is None else shaped_fitness(r, p_min_fill, lam=shaping_lambda)
         # store trajectory row
         row = {
             "gen": gen + 1,
             "idx": idx,
             "regret": None if r is None else round(r, 6),
+            "shaped": None if shaped is None else round(shaped, 6),
+            "p_min_fill": None if p_min_fill is None else round(p_min_fill, 6),
             "p_dq": eval_p.get("disqualified", False) if eval_p is not None else None,
             "p_N": eval_p.get("container_count", None) if eval_p is not None else None,
             "p_dev": eval_p.get("mean_y_deviation", None) if eval_p is not None else None,
@@ -221,52 +331,88 @@ def run_loop(
                 hard_buffer = hard_buffer[:TOP_K_SAVE * 2]
         # mode-collapse metrics
         if data is not None:
-            params = decode_theta(theta)
-            row["size_entropy"] = round(float(params["size_entropy"]), 4)
+            if catalog == 31:
+                params = decode_theta31(theta)
+                row["size_entropy"] = round(float(params["size_entropy_norm"]), 4)
+            else:
+                params = decode_theta(theta)
+                row["size_entropy"] = round(float(params["size_entropy"]), 4)
             row["item_count"] = data["dataset_info"]["item_count"]
-        return -r if r is not None else NONE_PENALTY
+        # CMA-ES は整形 fitness で探索（プラトーに勾配を付与）。
+        # gen summary / hard-instance 保存は純 regret のまま（fidelity 保全）。
+        return -shaped if shaped is not None else NONE_PENALTY
 
-    print(f"[adv_lane] Starting loop: G={generations}, pop={popsize}, ga_gen={ga_gen}, ga_pop={ga_pop}")
+    print(f"[adv_lane] Starting loop: G={generations}, pop={popsize}, ga_gen={ga_gen}, ga_pop={ga_pop}, catalog={catalog}")
     print(f"[adv_lane] CMA-ES available: {HAS_CMA}")
     print(f"[adv_lane] Output dir: {out_dir}")
     print(f"[adv_lane] Hard instance dir: {hard_dir}")
 
+    dim = THETA_DIM_31 if catalog == 31 else THETA_DIM
     if HAS_CMA:
-        x0 = np.zeros(THETA_DIM)
+        x0 = np.zeros(dim)
         sigma0 = 0.5
         opts = {
             "popsize": popsize,
             "verbose": -9,
-            "CMA_stds": [0.5] * THETA_DIM,
+            "CMA_stds": [0.5] * dim,
         }
         es = cma.CMAEvolutionStrategy(x0, sigma0, opts)
-        for gen in range(generations):
-            solutions = es.ask()
-            fitnesses = [_fitness(sol, gen, i) for i, sol in enumerate(solutions)]
-            es.tell(solutions, fitnesses)
-            # generation summary
-            regrets = [trajectory[-(popsize - i)]["regret"] for i in range(popsize) if trajectory[-(popsize - i)]["regret"] is not None]
-            none_count = sum(1 for i in range(popsize) if trajectory[-(popsize - i)]["regret"] is None)
-            entropies = [trajectory[-(popsize - i)].get("size_entropy") for i in range(popsize) if trajectory[-(popsize - i)].get("size_entropy") is not None]
-            summary = {
-                "gen": gen + 1,
-                "best_regret": max(regrets) if regrets else None,
-                "mean_regret": sum(regrets) / len(regrets) if regrets else None,
-                "std_regret": (sum((x - sum(regrets) / len(regrets)) ** 2 for x in regrets) / len(regrets)) ** 0.5 if regrets else None,
-                "none_rate": none_count / popsize,
-                "mean_entropy": sum(entropies) / len(entropies) if entropies else None,
-            }
-            gen_summaries.append(summary)
-            print(
-                f"Gen {gen+1:02d}/{generations}  best_r={summary['best_regret']:.3f}  "
-                f"mean_r={summary['mean_regret']:.3f}  std_r={summary['std_regret']:.3f}  "
-                f"none={summary['none_rate']:.2%}  entropy={summary['mean_entropy']:.3f}"
-            )
+        nw = _resolve_workers(workers, popsize)
+        print(f"[adv_lane] Parallel workers: {nw} (pop={popsize}, cpu={os.cpu_count()})")
+        pool = ProcessPoolExecutor(max_workers=nw) if nw > 1 else None
+        try:
+            for gen in range(generations):
+                solutions = es.ask()
+                payloads = [
+                    (np.asarray(sol).tolist(), gen, i, base_seed, popsize,
+                     ga_gen, ga_pop, catalog, shaping_lambda)
+                    for i, sol in enumerate(solutions)
+                ]
+                if pool is not None:
+                    results = list(pool.map(_eval_one, payloads))
+                else:
+                    results = [_eval_one(p) for p in payloads]
+                # parent 側で順序保持しつつ trajectory / hard_buffer を更新
+                for res in results:
+                    trajectory.append(res["row"])
+                    if res["regret"] is not None and res["data"] is not None:
+                        hard_buffer.append(
+                            (res["regret"], res["data"], np.asarray(res["theta"]))
+                        )
+                hard_buffer.sort(key=lambda t: -t[0])
+                del hard_buffer[TOP_K_SAVE * 2:]
+                fitnesses = [res["fitness"] for res in results]
+                es.tell(solutions, fitnesses)
+                # generation summary
+                regrets = [trajectory[-(popsize - i)]["regret"] for i in range(popsize) if trajectory[-(popsize - i)]["regret"] is not None]
+                none_count = sum(1 for i in range(popsize) if trajectory[-(popsize - i)]["regret"] is None)
+                entropies = [trajectory[-(popsize - i)].get("size_entropy") for i in range(popsize) if trajectory[-(popsize - i)].get("size_entropy") is not None]
+                summary = {
+                    "gen": gen + 1,
+                    "best_regret": max(regrets) if regrets else None,
+                    "mean_regret": sum(regrets) / len(regrets) if regrets else None,
+                    "std_regret": (sum((x - sum(regrets) / len(regrets)) ** 2 for x in regrets) / len(regrets)) ** 0.5 if regrets else None,
+                    "none_rate": none_count / popsize,
+                    "mean_entropy": sum(entropies) / len(entropies) if entropies else None,
+                }
+                gen_summaries.append(summary)
+                br = "n/a" if summary["best_regret"] is None else f"{summary['best_regret']:.3f}"
+                mr = "n/a" if summary["mean_regret"] is None else f"{summary['mean_regret']:.3f}"
+                sr = "n/a" if summary["std_regret"] is None else f"{summary['std_regret']:.3f}"
+                en = "n/a" if summary["mean_entropy"] is None else f"{summary['mean_entropy']:.3f}"
+                print(
+                    f"Gen {gen+1:02d}/{generations}  best_r={br}  "
+                    f"mean_r={mr}  std_r={sr}  "
+                    f"none={summary['none_rate']:.2%}  entropy={en}"
+                )
+        finally:
+            if pool is not None:
+                pool.shutdown(wait=True)
         best_theta = es.result.xbest
     else:
         print("[adv_lane] Warning: cma not installed — falling back to simple (mu,lambda)-ES")
         best_theta, gen_logs = _simple_es_loop(
-            THETA_DIM, generations, popsize, _fitness, sigma0=0.5
+            dim, generations, popsize, _fitness, sigma0=0.5
         )
         for g, gl in enumerate(gen_logs):
             # fitness は -regret or NONE_PENALTY(1e6) のため集計に使わない。
@@ -368,8 +514,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ga-pop", type=int, default=DEFAULT_GA_POP, help="GA population for protagonist")
     parser.add_argument("--smoke", action="store_true", help="Run quick smoke test (G=3,pop=4, light GA)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument(
+        "--shaping-lambda",
+        type=float,
+        default=0.5,
+        help="regret 整形係数 (CMA-ES 探索専用)。0 で整形無効＝純 regret 探索（A/B 比較用）",
+    )
     parser.add_argument("--out-dir", type=Path, default=None)
     parser.add_argument("--hard-dir", type=Path, default=None)
+    parser.add_argument("--catalog", type=int, choices={3, 31}, default=3, help="Catalog mode: 3 (legacy) or 31 (extended)")
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=0,
+        help="並列ワーカ数。0=自動(min(pop,CPU-1))、1=直列、N=指定。世代内 pop 評価をプロセス並列化（結果不変）",
+    )
     return parser.parse_args()
 
 
@@ -411,6 +570,9 @@ def main() -> None:
         out_dir=out_dir,
         hard_dir=hard_dir,
         seed=args.seed,
+        shaping_lambda=args.shaping_lambda,
+        catalog=args.catalog,
+        workers=args.workers,
     )
 
 

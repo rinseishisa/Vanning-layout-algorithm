@@ -24,6 +24,15 @@ python -m rui.adv_lane.loop --smoke
 
 `--smoke` は `G=3, pop=4, ga_gen=5, ga_pop=6` で動作確認を行います。
 
+### 31種カタログモード（Phase 1.5 レーン B）
+
+```bash
+python -m rui.adv_lane.loop --catalog 31 --smoke
+```
+
+`--catalog 31` を指定すると 31-type catalog (`catalog31.py`) 経由で生成・探索します。
+省略時は `--catalog 3`（従来の 3 種レーン）がデフォルトです。
+
 ## 出力
 
 - `rui/adv_lane/runs/<timestamp>/`
