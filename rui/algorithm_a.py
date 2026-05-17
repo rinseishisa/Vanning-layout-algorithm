@@ -7,7 +7,7 @@ import random
 import copy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
+from typing import Callable, Dict, List, Sequence, Tuple
 
 import pandas as pd
 
@@ -603,20 +603,29 @@ def mutate(sequence: List[Item], mutation_rate: float = 0.1) -> List[Item]:
     return seq
 
 
-def local_search_2swap(seq: List[Item], max_steps: int = 2) -> List[Item]:
-    """Bounded first-improvement 2-swap local search on permutation genotype."""
+def local_search_2swap(
+    seq: List[Item],
+    max_steps: int = 2,
+    decoder: Callable[[Sequence[Item]], List[Container]] = pack_items,
+) -> List[Item]:
+    """Bounded first-improvement 2-swap local search on permutation genotype.
+
+    *decoder* は順列→コンテナ列の写像。既定は貪欲 ``pack_items`` (既存挙動
+    完全保持)。R0 で beam デコードを使う際は run_ga が同じ decoder を
+    ここへ渡し、エリート局所探索と GA 選択の目的関数を一致させる。
+    """
     n = len(seq)
     if n < 2:
         return seq[:]
     seq = seq[:]  # work on copy
     best_seq = seq[:]
-    containers = pack_items(best_seq)
+    containers = decoder(best_seq)
     best_eval = evaluate_solution(containers)
     best_key = fitness_key(best_eval)
     for _ in range(max_steps):
         i, j = random.sample(range(n), 2)
         seq[i], seq[j] = seq[j], seq[i]
-        containers = pack_items(seq)
+        containers = decoder(seq)
         ev = evaluate_solution(containers)
         key = fitness_key(ev)
         if key < best_key:
@@ -628,9 +637,9 @@ def local_search_2swap(seq: List[Item], max_steps: int = 2) -> List[Item]:
 
 
 # GA 初期集団シード用の decreasing 順。敵対レーン (rui/adv_lane/antagonist.py)
-# の同名定数を本ブランチ自己完結のためインライン化（授業主納品 feat/rui-ga は
-# 敵対研究レーンに依存させない）。GA は item 順列を探索できるのが強みで、
-# 代表的な decreasing 順を複数種付けすると instance 毎に効く順番を引き当てやすい。
+# の同名定数を授業主納品幹で自己完結させるためインライン化（algorithm_a.py
+# 単体で動くことを保証。adv_lane を剥がしたクラス提出形でも GA は動く）。
+# 値は antagonist._ITEM_ORDERINGS と一致・item 属性のみ依存の 4-tuple。
 _ITEM_ORDERINGS = [
     ("weight_desc", lambda it: (-it.weight, -it.volume, it.item_id)),
     ("volume_desc", lambda it: (-it.volume, -it.weight, it.item_id)),
@@ -639,7 +648,15 @@ _ITEM_ORDERINGS = [
 ]
 
 
-def run_ga(base_items: List[Item], generations: int = 10, pop_size: int = 10) -> Tuple[List[Container], Dict[str, object]]:
+def run_ga(
+    base_items: List[Item],
+    generations: int = 10,
+    pop_size: int = 10,
+    decoder: Callable[[Sequence[Item]], List[Container]] = pack_items,
+) -> Tuple[List[Container], Dict[str, object]]:
+    # decoder: 順列→コンテナ列。既定 greedy pack_items は既存 baseline と
+    # ビット同一 (回帰ゼロ)。R0 はここに pack_items_beam を注入して
+    # 「分岐デコードだけで dN が縮むか」を測る。
     # 初期集団: ベース + 4 decreasing 順 + ランダムシャッフル
 
     # 目的地ごとにグループ化（build_items のソート順を維持）
@@ -674,7 +691,7 @@ def run_ga(base_items: List[Item], generations: int = 10, pop_size: int = 10) ->
     for gen in range(generations):
         scored_pop = []
         for seq in population:
-            containers = pack_items(seq)
+            containers = decoder(seq)
             evaluation = evaluate_solution(containers)
             key = fitness_key(evaluation)
             scored_pop.append((key, seq, containers, evaluation))
@@ -704,7 +721,7 @@ def run_ga(base_items: List[Item], generations: int = 10, pop_size: int = 10) ->
         next_gen = [best_current[1]] # エリートを1つ残す
 
         # 有界 memetic 局所探索: エリートに軽い 2-swap を適用 (max_steps=3)
-        next_gen[0] = local_search_2swap(next_gen[0], max_steps=3)
+        next_gen[0] = local_search_2swap(next_gen[0], max_steps=3, decoder=decoder)
 
         # 停滞リスタート: 8世代改善なしで集団を刷新（エリート以外ランダム再生成）
         if stagnation_count >= 8:
