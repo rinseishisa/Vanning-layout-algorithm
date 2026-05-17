@@ -602,10 +602,63 @@ def mutate(sequence: List[Item], mutation_rate: float = 0.1) -> List[Item]:
         seq[idx1], seq[idx2] = seq[idx2], seq[idx1]
     return seq
 
+
+def local_search_2swap(seq: List[Item], max_steps: int = 2) -> List[Item]:
+    """Bounded first-improvement 2-swap local search on permutation genotype."""
+    n = len(seq)
+    if n < 2:
+        return seq[:]
+    seq = seq[:]  # work on copy
+    best_seq = seq[:]
+    containers = pack_items(best_seq)
+    best_eval = evaluate_solution(containers)
+    best_key = fitness_key(best_eval)
+    for _ in range(max_steps):
+        i, j = random.sample(range(n), 2)
+        seq[i], seq[j] = seq[j], seq[i]
+        containers = pack_items(seq)
+        ev = evaluate_solution(containers)
+        key = fitness_key(ev)
+        if key < best_key:
+            best_seq = seq[:]
+            best_key = key
+        else:
+            seq[i], seq[j] = seq[j], seq[i]  # revert
+    return best_seq
+
+
+# GA 初期集団シード用の decreasing 順。敵対レーン (rui/adv_lane/antagonist.py)
+# の同名定数を本ブランチ自己完結のためインライン化（授業主納品 feat/rui-ga は
+# 敵対研究レーンに依存させない）。GA は item 順列を探索できるのが強みで、
+# 代表的な decreasing 順を複数種付けすると instance 毎に効く順番を引き当てやすい。
+_ITEM_ORDERINGS = [
+    ("weight_desc", lambda it: (-it.weight, -it.volume, it.item_id)),
+    ("volume_desc", lambda it: (-it.volume, -it.weight, it.item_id)),
+    ("footprint_desc", lambda it: (-(it.width * it.length), -it.height, it.item_id)),
+    ("longedge_desc", lambda it: (-max(it.width, it.length, it.height), -it.volume, it.item_id)),
+]
+
+
 def run_ga(base_items: List[Item], generations: int = 10, pop_size: int = 10) -> Tuple[List[Container], Dict[str, object]]:
-    # 初期集団: ベース（重い順などの発見的ソート）と、シャッフルしたもの
-    population = [base_items]
-    for _ in range(pop_size - 1):
+    # 初期集団: ベース + 4 decreasing 順 + ランダムシャッフル
+
+    # 目的地ごとにグループ化（build_items のソート順を維持）
+    groups: Dict[str, List[Item]] = {}
+    for item in base_items:
+        groups.setdefault(item.destination_id, []).append(item)
+    dest_order = list(groups.keys())
+
+    population = [base_items[:]]
+
+    # 4 つの key_fn で各目的地グループ内をソートして混ぜる
+    for _name, key_fn in _ITEM_ORDERINGS:
+        seeded = []
+        for dest in dest_order:
+            seeded.extend(sorted(groups[dest], key=key_fn))
+        population.append(seeded)
+
+    # 残りをランダムシャッフルで埋める
+    while len(population) < pop_size:
         shuffled = base_items[:]
         random.shuffle(shuffled)
         population.append(shuffled)
@@ -613,6 +666,8 @@ def run_ga(base_items: List[Item], generations: int = 10, pop_size: int = 10) ->
     best_containers = None
     best_eval = None
     best_key = None  # 辞書式キー: 小さいほど良い
+    stagnation_count = 0
+    base_mutation_rate = 0.2
 
     print(f"--- GA Started: pop_size={pop_size}, generations={generations} ---")
 
@@ -628,6 +683,7 @@ def run_ga(base_items: List[Item], generations: int = 10, pop_size: int = 10) ->
                 best_key = key
                 best_containers = containers
                 best_eval = evaluation
+                stagnation_count = 0
 
         # 選択 (エリート主義 + トーナメント) — 辞書式キー昇順 (小さいほど良い)
         scored_pop.sort(key=lambda entry: entry[0])
@@ -639,10 +695,30 @@ def run_ga(base_items: List[Item], generations: int = 10, pop_size: int = 10) ->
             f"Containers: {bc['container_count']}, "
             f"MeanDev: {bc['mean_y_deviation']:.1f}, "
             f"MaxDev: {bc['max_y_deviation']:.1f}, "
-            f"Fill: {bc['average_fill_rate']:.4f}"
+            f"Fill: {bc['average_fill_rate']:.4f}, "
+            f"Stag: {stagnation_count}"
         )
 
+        stagnation_count += 1
+
         next_gen = [best_current[1]] # エリートを1つ残す
+
+        # 有界 memetic 局所探索: エリートに軽い 2-swap を適用 (max_steps=3)
+        next_gen[0] = local_search_2swap(next_gen[0], max_steps=3)
+
+        # 停滞リスタート: 8世代改善なしで集団を刷新（エリート以外ランダム再生成）
+        if stagnation_count >= 8:
+            print(f"  [Restart at gen {gen+1}]")
+            while len(next_gen) < pop_size:
+                shuffled = base_items[:]
+                random.shuffle(shuffled)
+                next_gen.append(shuffled)
+            stagnation_count = 0
+            population = next_gen
+            continue
+
+        # 適応的突然変異率: 停滞が進むほど上昇
+        adaptive_rate = base_mutation_rate + 0.15 * (stagnation_count / 8.0)
 
         # 交叉と突然変異で次世代を作る
         while len(next_gen) < pop_size:
@@ -653,7 +729,7 @@ def run_ga(base_items: List[Item], generations: int = 10, pop_size: int = 10) ->
             p2 = min(tournament2, key=lambda entry: entry[0])[1]
 
             child = order_crossover(p1, p2)
-            child = mutate(child, mutation_rate=0.2)
+            child = mutate(child, mutation_rate=adaptive_rate)
             next_gen.append(child)
 
         population = next_gen
