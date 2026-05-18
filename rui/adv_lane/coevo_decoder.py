@@ -117,3 +117,37 @@ def pack_items_learned(
         container, candidate = placements[best]
         state = _apply_placement(state, container, candidate)
     return state
+
+
+# ---------------------------------------------------------------------------
+# Portfolio: greedy ∪ learned, lexicographic-best (= 構成上 greedy 以下に
+# ならない / 失格安全)。実証済 R1-MLP デコーダの本番昇格パス。
+# ---------------------------------------------------------------------------
+# 学習デコーダ優位は instance 難度依存 (REVIEW: easy/std では greedy 同等)。
+# fitness_key 全タプル(失格フラグ込)で良い方のみ採る → **回帰不可**
+# (失格(1,0,0) は任意の合格(0,n,d)より劣るので失格を合格より選ばない)。
+# gate は学習 decode を回す価値のある難 instance だけに絞る純粋な性能
+# 最適化で、「greedy 以下にならない」正当性は gate に依存しない。
+PORTFOLIO_MIN_ITEMS = 60
+
+
+def pack_items_portfolio(items: Sequence[Item]) -> List[Container]:
+    """greedy と学習デコーダを走らせ fitness_key が良い方を返す。
+
+    構成上 greedy の解より悪くなり得ない (lexicographic 比較・失格安全)。
+    モデル不在 / 小規模 / 学習 decode 例外時は greedy をそのまま返す。
+    """
+    from rui.algorithm_a import evaluate_solution, fitness_key
+
+    items = list(items)
+    greedy = pack_items(items)
+    model = _load_model(_DEFAULT_MODEL_PATH)
+    if model is None or len(items) < PORTFOLIO_MIN_ITEMS:
+        return greedy
+    try:
+        learned = pack_items_learned(items)
+        if fitness_key(evaluate_solution(learned)) < fitness_key(evaluate_solution(greedy)):
+            return learned
+    except Exception:
+        pass
+    return greedy

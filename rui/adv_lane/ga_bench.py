@@ -40,7 +40,11 @@ if str(_VEVAL_SRC) not in sys.path:
     sys.path.insert(0, str(_VEVAL_SRC))
 
 from rui.adv_lane.antagonist import beam_search_strong  # noqa: E402
-from rui.adv_lane.coevo_decoder import pack_items_beam, pack_items_learned  # noqa: E402
+from rui.adv_lane.coevo_decoder import (  # noqa: E402
+    pack_items_beam,
+    pack_items_learned,
+    pack_items_portfolio,
+)
 from rui.adv_lane.loop import _make_dataframe  # noqa: E402  (tolerant loader)
 from rui.algorithm_a import build_items, build_output_json, pack_items, run_ga  # noqa: E402
 
@@ -52,6 +56,7 @@ _DECODERS = {
     "greedy": pack_items,
     "beam": pack_items_beam,
     "learned": pack_items_learned,
+    "portfolio": pack_items_portfolio,
 }
 
 _HERE = Path(__file__).parent
