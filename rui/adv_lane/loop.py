@@ -142,6 +142,22 @@ def _format_theta(theta: np.ndarray) -> str:
     return "[" + ", ".join(f"{x:.3f}" for x in theta) + "]"
 
 
+def _dump_gen_summary(path: Path, summaries: List[Dict]) -> None:
+    """gen_summary を CSV へ書き出す（冪等・毎世代呼べる）。
+
+    最終一括書き出しだとクラッシュ/kill で全消失し本走中インスペクトも不可
+    だった反省（scale up 前提改修）。毎世代これを呼べば途中まで必ず
+    ディスクに残り、別プロセスから進捗を読める。summary 行は両経路で固定
+    キー（gen/best_regret/mean_regret/std_regret/none_rate/mean_entropy）。
+    """
+    if not summaries:
+        return
+    with path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=summaries[0].keys())
+        writer.writeheader()
+        writer.writerows(summaries)
+
+
 def _simple_es_loop(
     dim: int,
     generations: int,
@@ -405,6 +421,8 @@ def run_loop(
                     f"mean_r={mr}  std_r={sr}  "
                     f"none={summary['none_rate']:.2%}  entropy={en}"
                 )
+                # 毎世代 flush 書き出し（クラッシュ/kill 生存・別プロセスから進捗読取）
+                _dump_gen_summary(out_dir / "gen_summary.csv", gen_summaries)
         finally:
             if pool is not None:
                 pool.shutdown(wait=True)
@@ -446,6 +464,7 @@ def run_loop(
                 f"Gen {gl['gen']:02d}/{generations}  best_r={br}  mean_r={mr}  "
                 f"none={summary['none_rate']:.0%}  sigma={gl['sigma']:.4f}"
             )
+            _dump_gen_summary(out_dir / "gen_summary.csv", gen_summaries)
 
     # ------------------------------------------------------------------
     # Persist outputs
@@ -458,13 +477,8 @@ def run_loop(
             writer.writeheader()
             writer.writerows(trajectory)
 
-    # Generation summary CSV
-    sum_path = out_dir / "gen_summary.csv"
-    with sum_path.open("w", newline="", encoding="utf-8") as f:
-        if gen_summaries:
-            writer = csv.DictWriter(f, fieldnames=gen_summaries[0].keys())
-            writer.writeheader()
-            writer.writerows(gen_summaries)
+    # Generation summary CSV（毎世代の冪等書き出しと同一経路＝最終も一貫）
+    _dump_gen_summary(out_dir / "gen_summary.csv", gen_summaries)
 
     # Best theta
     theta_path = out_dir / "best_theta.json"
@@ -533,11 +547,16 @@ def parse_args() -> argparse.Namespace:
 
 
 def _setup_utf8_streams() -> None:
-    """Windows の CP932 端末でも非 ASCII (em-dash 等) を文字化け/クラッシュさせない。"""
+    """Windows の CP932 端末でも非 ASCII (em-dash 等) を文字化け/クラッシュさせない。
+
+    併せて line_buffering を有効化する。ログをファイル/パイプへリダイレクトすると
+    stdout はブロックバッファリングになり、本走中ほぼ何も出ず進捗が見えなかった
+    （世代行は生成済だがバッファ滞留）。改行ごと flush で即時に進捗が見える。
+    """
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             try:
-                stream.reconfigure(encoding="utf-8")
+                stream.reconfigure(encoding="utf-8", line_buffering=True)
             except Exception:
                 pass
 
