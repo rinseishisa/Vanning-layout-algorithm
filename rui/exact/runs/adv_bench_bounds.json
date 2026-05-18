@@ -1,0 +1,74 @@
+{
+  "hard_01_g15_p12": {
+    "lb": 7,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  },
+  "hard_02_g15_p12": {
+    "lb": 8,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  },
+  "hard_03_g15_p12": {
+    "lb": 7,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  },
+  "hard_04_g15_p12": {
+    "lb": 7,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  },
+  "hard_05_g15_p12": {
+    "lb": 7,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  },
+  "hard_06_g15_p12": {
+    "lb": 7,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  },
+  "hard_07_g15_p12": {
+    "lb": 6,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  },
+  "hard_08_g15_p12": {
+    "lb": 7,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  },
+  "hard_09_g15_p12": {
+    "lb": 7,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  },
+  "hard_10_g15_p12": {
+    "lb": 7,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  },
+  "hard_11_g15_p12": {
+    "lb": 7,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  },
+  "hard_12_g15_p12": {
+    "lb": 6,
+    "opt": null,
+    "opt_certified": false,
+    "source": "rui/exact bench_table 2026-05-18"
+  }
+}

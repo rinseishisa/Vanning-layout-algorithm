@@ -1,0 +1,100 @@
+{
+  "audit": [
+    {
+      "instance": "hard_01_g15_p12.json",
+      "stem": "hard_01_g15_p12",
+      "beam_N": 9,
+      "perdest_lb": 7,
+      "gap": 2,
+      "class": "genuinely_hard"
+    },
+    {
+      "instance": "hard_02_g15_p12.json",
+      "stem": "hard_02_g15_p12",
+      "beam_N": 10,
+      "perdest_lb": 8,
+      "gap": 2,
+      "class": "genuinely_hard"
+    },
+    {
+      "instance": "hard_03_g15_p12.json",
+      "stem": "hard_03_g15_p12",
+      "beam_N": 10,
+      "perdest_lb": 7,
+      "gap": 3,
+      "class": "genuinely_hard"
+    },
+    {
+      "instance": "hard_04_g15_p12.json",
+      "stem": "hard_04_g15_p12",
+      "beam_N": 10,
+      "perdest_lb": 7,
+      "gap": 3,
+      "class": "genuinely_hard"
+    },
+    {
+      "instance": "hard_05_g15_p12.json",
+      "stem": "hard_05_g15_p12",
+      "beam_N": 10,
+      "perdest_lb": 7,
+      "gap": 3,
+      "class": "genuinely_hard"
+    },
+    {
+      "instance": "hard_06_g15_p12.json",
+      "stem": "hard_06_g15_p12",
+      "beam_N": 10,
+      "perdest_lb": 7,
+      "gap": 3,
+      "class": "genuinely_hard"
+    },
+    {
+      "instance": "hard_07_g15_p12.json",
+      "stem": "hard_07_g15_p12",
+      "beam_N": 10,
+      "perdest_lb": 6,
+      "gap": 4,
+      "class": "genuinely_hard"
+    },
+    {
+      "instance": "hard_08_g15_p12.json",
+      "stem": "hard_08_g15_p12",
+      "beam_N": 9,
+      "perdest_lb": 7,
+      "gap": 2,
+      "class": "genuinely_hard"
+    },
+    {
+      "instance": "hard_09_g15_p12.json",
+      "stem": "hard_09_g15_p12",
+      "beam_N": 10,
+      "perdest_lb": 7,
+      "gap": 3,
+      "class": "genuinely_hard"
+    },
+    {
+      "instance": "hard_10_g15_p12.json",
+      "stem": "hard_10_g15_p12",
+      "beam_N": 10,
+      "perdest_lb": 7,
+      "gap": 3,
+      "class": "genuinely_hard"
+    },
+    {
+      "instance": "hard_11_g15_p12.json",
+      "stem": "hard_11_g15_p12",
+      "beam_N": 10,
+      "perdest_lb": 7,
+      "gap": 3,
+      "class": "genuinely_hard"
+    },
+    {
+      "instance": "hard_12_g15_p12.json",
+      "stem": "hard_12_g15_p12",
+      "beam_N": 10,
+      "perdest_lb": 6,
+      "gap": 4,
+      "class": "genuinely_hard"
+    }
+  ]
+}
